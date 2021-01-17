@@ -230,7 +230,7 @@ resource "kubernetes_daemonset" "this" {
 
           volume_mount {
             name       = "fluentbitstate"
-            mount_path = "var/fluent-bit/state"
+            mount_path = "/var/fluent-bit/state"
           }
 
           volume_mount {

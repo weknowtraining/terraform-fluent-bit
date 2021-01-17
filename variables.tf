@@ -20,7 +20,7 @@ variable "region" {
 }
 
 variable "image" {
-  default     = "amazon/aws-for-fluent-bit:2.10.0"
+  default     = "amazon/aws-for-fluent-bit:2.10.1"
   description = "The Docker image to run"
 
   validation {
