@@ -15,8 +15,6 @@ variable "region" {
   description = "The region to run in"
 }
 
-
-
 variable "image" {
   default     = "amazon/aws-for-fluent-bit:2.10.0"
   description = "The Docker image to run"
