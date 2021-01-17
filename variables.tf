@@ -24,3 +24,11 @@ variable "image" {
     error_message = "You must use a amazon/aws-for-fluent-bit image and include the version."
   }
 }
+
+variable "cluster_oidc_issuer_url" {
+  description = "The cluster_oidc_issuer_url for the EKS cluster"
+}
+
+variable "oidc_provider_arn" {
+  description = "The oidc_provider_arn for the EKS cluster"
+}

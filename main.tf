@@ -14,18 +14,32 @@ data "aws_iam_policy_document" "this" {
   }
 }
 
-# FIXME: Get the OIDC stuff working
-resource "aws_iam_user" "this" {
-  name = "fluent-bit"
+data "aws_iam_policy_document" "assume-role" {
+  statement {
+    effect = "Allow"
+
+    principals {
+      type        = "Federated"
+      identifiers = [var.oidc_provider_arn]
+    }
+
+    actions = ["sts:AssumeRoleWithWebIdentity"]
+
+    condition {
+      test     = "StringEquals"
+      variable = "${replace(var.cluster_oidc_issuer_url, "https://", "")}:sub"
+      values   = ["system:serviceaccount:${var.namespace}:fluent-bit"]
+    }
+  }
 }
 
-resource "aws_iam_access_key" "this" {
-  user = aws_iam_user.this.name
+resource "aws_iam_role" "this" {
+  name               = "fluent-bit-cloudwatch"
+  assume_role_policy = data.aws_iam_policy_document.assume-role.json
 }
 
-resource "aws_iam_user_policy" "this" {
-  name   = "cloudwatch"
-  user   = aws_iam_user.this.id
+resource "aws_iam_role_policy" "this" {
+  role   = aws_iam_role.this.id
   policy = data.aws_iam_policy_document.this.json
 }
 
@@ -49,6 +63,10 @@ resource "kubernetes_service_account" "this" {
   metadata {
     name      = "fluent-bit"
     namespace = var.namespace
+
+    annotations = {
+      "eks.amazonaws.com/role-arn" = aws_iam_role.this.arn
+    }
   }
 
   automount_service_account_token = true
@@ -107,22 +125,6 @@ resource "kubernetes_config_map" "this" {
   }
 }
 
-resource "kubernetes_secret" "this" {
-  metadata {
-    name      = "fluent-bit-aws-credentials"
-    namespace = var.namespace
-
-    labels = {
-      "k8s-app" = "fluent-bit"
-    }
-  }
-
-  data = {
-    "AWS_ACCESS_KEY_ID"     = aws_iam_access_key.this.id
-    "AWS_SECRET_ACCESS_KEY" = aws_iam_access_key.this.secret
-  }
-}
-
 resource "kubernetes_daemonset" "this" {
   metadata {
     name      = "fluent-bit"
@@ -155,12 +157,6 @@ resource "kubernetes_daemonset" "this" {
         container {
           name  = "fluent-bit"
           image = var.image
-
-          env_from {
-            secret_ref {
-              name = "fluent-bit-aws-credentials"
-            }
-          }
 
           env {
             name = "AWS_REGION"
