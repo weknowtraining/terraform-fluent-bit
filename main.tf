@@ -14,15 +14,19 @@ data "aws_iam_policy_document" "this" {
   }
 }
 
-resource "aws_iam_policy" "this" {
-  name        = "fluent-bit-cloudwatch"
-  description = "Allow fluent-bit to talk to CloudWatch"
-  policy      = data.aws_iam_policy_document.this.json
+# FIXME: Get the OIDC stuff working
+resource "aws_iam_user" "this" {
+  name = "fluent-bit"
 }
 
-resource "aws_iam_role_policy_attachment" "this" {
-  role       = var.worker_iam_role_name
-  policy_arn = aws_iam_policy.this.arn
+resource "aws_iam_access_key" "this" {
+  user = aws_iam_user.this.name
+}
+
+resource "aws_iam_user_policy" "this" {
+  name   = "cloudwatch"
+  user   = aws_iam_user.this.id
+  policy = data.aws_iam_policy_document.this.json
 }
 
 resource "kubernetes_config_map" "cluster-info" {
@@ -103,6 +107,22 @@ resource "kubernetes_config_map" "this" {
   }
 }
 
+resource "kubernetes_secret" "this" {
+  metadata {
+    name      = "fluent-bit-aws-credentials"
+    namespace = var.namespace
+
+    labels = {
+      "k8s-app" = "fluent-bit"
+    }
+  }
+
+  data = {
+    "AWS_ACCESS_KEY_ID"     = aws_iam_access_key.this.id
+    "AWS_SECRET_ACCESS_KEY" = aws_iam_access_key.this.secret
+  }
+}
+
 resource "kubernetes_daemonset" "this" {
   metadata {
     name      = "fluent-bit"
@@ -135,6 +155,12 @@ resource "kubernetes_daemonset" "this" {
         container {
           name  = "fluent-bit"
           image = var.image
+
+          env_from {
+            secret_ref {
+              name = "fluent-bit-aws-credentials"
+            }
+          }
 
           env {
             name = "AWS_REGION"
