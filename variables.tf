@@ -2,6 +2,10 @@ terraform {
   experiments = [variable_validation]
 }
 
+variable "worker_iam_role_name" {
+  description = "The EKS worker IAM role name"
+}
+
 variable "namespace" {
   default     = "aws"
   description = "The k8s namespace to install the agent in"

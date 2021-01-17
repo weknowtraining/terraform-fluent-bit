@@ -1,3 +1,30 @@
+data "aws_iam_policy_document" "this" {
+  statement {
+    effect = "Allow"
+
+    actions = [
+      "logs:DescribeLogGroups",
+      "logs:CreateLogStream",
+      "logs:DescribeLogStreams",
+      "logs:PutLogEvents",
+      "logs:CreateLogGroup"
+    ]
+
+    resources = ["*"]
+  }
+}
+
+resource "aws_iam_policy" "this" {
+  name        = "fluent-bit-cloudwatch"
+  description = "Allow fluent-bit to talk to CloudWatch"
+  policy      = data.aws_iam_policy_document.this.json
+}
+
+resource "aws_iam_role_policy_attachment" "this" {
+  role       = var.worker_iam_role_name
+  policy_arn = aws_iam_policy.this.arn
+}
+
 resource "kubernetes_config_map" "cluster-info" {
   metadata {
     name      = "fluent-bit-cluster-info"
