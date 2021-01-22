@@ -1,7 +1,3 @@
-terraform {
-  experiments = [variable_validation]
-}
-
 variable "namespace" {
   default     = "aws"
   description = "The k8s namespace to install the agent in"
