@@ -240,11 +240,11 @@ resource "kubernetes_daemonset" "this" {
           }
 
           resources {
-            limits {
+            limits = {
               memory = "200Mi"
             }
 
-            requests {
+            requests = {
               memory = "100Mi"
               cpu    = "500m"
             }
