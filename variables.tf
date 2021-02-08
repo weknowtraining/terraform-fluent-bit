@@ -28,3 +28,13 @@ variable "cluster_oidc_issuer_url" {
 variable "oidc_provider_arn" {
   description = "The oidc_provider_arn for the EKS cluster"
 }
+
+variable "log_level" {
+  default     = "warn"
+  description = "Log level for fluent-bit"
+
+  validation {
+    condition     = contains(["error", "warn", "info", "debug"], var.log_level)
+    error_message = "Must be one of error, warn, info, debug."
+  }
+}

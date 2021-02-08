@@ -50,12 +50,13 @@ resource "kubernetes_config_map" "cluster-info" {
   }
 
   data = {
-    "cluster.name" = var.cluster_id,
-    "http.server"  = "Off",
-    "http.port"    = "",
-    "logs.region"  = var.region,
-    "read.head"    = "Off",
-    "read.tail"    = "On"
+    "CLUSTER_NAME"   = var.cluster_id,
+    "HTTP_SERVER"    = "Off",
+    "HTTP_PORT"      = "",
+    "AWS_REGION"     = var.region,
+    "READ_FROM_HEAD" = "Off",
+    "READ_FROM_TAIL" = "On",
+    "LOG_LEVEL"      = var.log_level
   }
 }
 
@@ -112,7 +113,7 @@ resource "kubernetes_config_map" "this" {
     name      = "fluent-bit-config"
     namespace = var.namespace
     labels = {
-      "k8s-app" = "fluent-bit"
+      "app.kubernetes.io/name" = "fluent-bit"
     }
   }
 
@@ -131,7 +132,7 @@ resource "kubernetes_daemonset" "this" {
     namespace = var.namespace
 
     labels = {
-      "k8s-app"                       = "fluent-bit"
+      "app.kubernetes.io/name"        = "fluent-bit"
       "version"                       = "v1"
       "kubernetes.io/cluster-service" = "true"
     }
@@ -140,14 +141,14 @@ resource "kubernetes_daemonset" "this" {
   spec {
     selector {
       match_labels = {
-        "k8s-app" = "fluent-bit"
+        "app.kubernetes.io/name" = "fluent-bit"
       }
     }
 
     template {
       metadata {
         labels = {
-          "k8s-app"                       = "fluent-bit"
+          "app.kubernetes.io/name"        = "fluent-bit"
           "version"                       = "v1"
           "kubernetes.io/cluster-service" = "true"
         }
@@ -158,69 +159,9 @@ resource "kubernetes_daemonset" "this" {
           name  = "fluent-bit"
           image = var.image
 
-          env {
-            name = "AWS_REGION"
-
-            value_from {
-              config_map_key_ref {
-                name = "fluent-bit-cluster-info"
-                key  = "logs.region"
-              }
-            }
-          }
-
-          env {
-            name = "CLUSTER_NAME"
-
-            value_from {
-              config_map_key_ref {
-                name = "fluent-bit-cluster-info"
-                key  = "cluster.name"
-              }
-            }
-          }
-
-          env {
-            name = "HTTP_SERVER"
-
-            value_from {
-              config_map_key_ref {
-                name = "fluent-bit-cluster-info"
-                key  = "http.server"
-              }
-            }
-          }
-
-          env {
-            name = "HTTP_PORT"
-
-            value_from {
-              config_map_key_ref {
-                name = "fluent-bit-cluster-info"
-                key  = "http.port"
-              }
-            }
-          }
-
-          env {
-            name = "READ_FROM_HEAD"
-
-            value_from {
-              config_map_key_ref {
-                name = "fluent-bit-cluster-info"
-                key  = "read.head"
-              }
-            }
-          }
-
-          env {
-            name = "READ_FROM_TAIL"
-
-            value_from {
-              config_map_key_ref {
-                name = "fluent-bit-cluster-info"
-                key  = "read.tail"
-              }
+          env_from {
+            config_map_ref {
+              name = kubernetes_config_map.cluster-info.metadata.0.name
             }
           }
 
@@ -335,7 +276,7 @@ resource "kubernetes_daemonset" "this" {
           }
         }
 
-        service_account_name            = "fluent-bit"
+        service_account_name            = kubernetes_service_account.this.metadata.0.name
         automount_service_account_token = true
 
         toleration {
