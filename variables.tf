@@ -38,3 +38,13 @@ variable "log_level" {
     error_message = "Must be one of error, warn, info, debug."
   }
 }
+
+variable "http_server" {
+  default     = true
+  description = "Whether to run the HTTP server for metrics and stuff"
+}
+
+variable "http_server_port" {
+  default     = 2020
+  description = "HTTP server port"
+}

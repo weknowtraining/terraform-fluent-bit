@@ -51,8 +51,8 @@ resource "kubernetes_config_map" "cluster-info" {
 
   data = {
     "CLUSTER_NAME"   = var.cluster_id,
-    "HTTP_SERVER"    = "Off",
-    "HTTP_PORT"      = "",
+    "HTTP_SERVER"    = var.http_server ? "On" : "Off",
+    "HTTP_PORT"      = var.http_server_port,
     "AWS_REGION"     = var.region,
     "READ_FROM_HEAD" = "Off",
     "READ_FROM_TAIL" = "On",
@@ -158,6 +158,11 @@ resource "kubernetes_daemonset" "this" {
         container {
           name  = "fluent-bit"
           image = var.image
+
+          port {
+            container_port = var.http_server_port
+            name           = "api"
+          }
 
           env_from {
             config_map_ref {
