@@ -48,3 +48,9 @@ variable "http_server_port" {
   default     = 2020
   description = "HTTP server port"
 }
+
+variable "node_selector" {
+  default     = {}
+  type        = map(string)
+  description = "Node selector for the daemonset"
+}

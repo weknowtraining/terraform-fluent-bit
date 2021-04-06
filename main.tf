@@ -233,6 +233,8 @@ resource "kubernetes_daemonset" "this" {
 
         termination_grace_period_seconds = 10
 
+        node_selector = var.node_selector
+
         volume {
           name = "fluentbitstate"
 
