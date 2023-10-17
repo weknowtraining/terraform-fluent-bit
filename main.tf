@@ -208,12 +208,6 @@ resource "kubernetes_daemonset" "this" {
           }
 
           volume_mount {
-            name       = "varlibdockercontainers"
-            mount_path = "/var/lib/docker/containers"
-            read_only  = true
-          }
-
-          volume_mount {
             name       = "fluent-bit-config"
             mount_path = "/fluent-bit/etc/"
           }
@@ -248,14 +242,6 @@ resource "kubernetes_daemonset" "this" {
 
           host_path {
             path = "/var/log"
-          }
-        }
-
-        volume {
-          name = "varlibdockercontainers"
-
-          host_path {
-            path = "/var/lib/docker/containers"
           }
         }
 
